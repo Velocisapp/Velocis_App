@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocis™ High-Authority Terminal</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.js"></script>
+    <style>
+        body { margin: 0; background: #000; color: #FFD700; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; text-transform: uppercase; }
+        #brand { position: absolute; top: 15px; width: 100%; text-align: center; letter-spacing: 12px; z-index: 10; text-shadow: 0 0 25px #FFD700; }
+        
+        /* PULSATING CONTINENT NAVIGATION */
+        #continent-hub {
+            position: absolute; top: 62%; left: 50%; transform: translate(-50%, -50%);
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: 95%; z-index: 100;
+        }
+        .continent-btn {
+            background: rgba(0, 255, 255, 0.1); border: 2.5px solid #00ffff; color: #00ffff;
+            padding: 12px 18px; font-size: 0.7rem; font-weight: 900; border-radius: 4px;
+            cursor: pointer; animation: pulseGlow 2.5s infinite ease-in-out;
+        }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 5px #00ffff; } 50% { box-shadow: 0 0 25px #00ffff; border-color: #fff; } 100% { box-shadow: 0 0 5px #00ffff; } }
+
+        /* THE CARD WITH SCROLL + TYPE + AUTO */
+        .card { 
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); 
+            background: rgba(5, 18, 18, 0.98); border: 2px solid #FFD700; color: #FFD700; 
+            padding: 15px; border-radius: 4px; z-index: 200; width: 94%; height: 80%; 
+            backdrop-filter: blur(20px); box-shadow: 0 0 120px #000; display: flex; flex-direction: column;
+        }
+        
+        .gateway-deck { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; border-bottom: 1px solid rgba(0, 255, 255, 0.2); }
+        .city-tag { background: rgba(0, 255, 255, 0.15); color: #fff; border: 1px solid #00ffff; font-size: 0.65rem; padding: 8px 14px; cursor: pointer; white-space: nowrap; font-weight: 900; }
+        
+        .port-input { 
+            width: 95%; background: rgba(255,255,255,0.08); color: #fff; border: 1.5px solid #FFD700; 
+            padding: 10px; margin-top: 5px; font-family: inherit; font-size: 0.9rem; border-radius: 4px;
+        }
+        
+        .manifest-group { background: rgba(0, 255, 255, 0.05); padding: 10px; border-left: 4px solid #00ffff; margin: 8px 0; }
+        .port-display { color: #00ffff; font-weight: 900; font-size: 1rem; text-shadow: 0 0 10px #00ffff; }
+        
+        .scroll-area { overflow-y: scroll; flex-grow: 1; margin-top: 10px; border-top: 1px solid #333; }
+        .itinerary-line { border-bottom: 1px solid #333; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .validate-btn { background: #FFD700; color: #000; border: none; padding: 12px 20px; font-weight: 900; cursor: pointer; border-radius: 4px; }
+
+        /* BOLD ICON DOCK: ALWAYS BRIGHT */
+        #transport-menu { 
+            position: absolute; bottom: 80px; width: 100%; 
+            display: flex; justify-content: center; gap: 25px; z-index: 100; 
+        }
+        .icon-btn { 
+            width: 85px; height: 85px; display: flex; align-items: center; justify-content: center;
+            border: 3px solid rgba(0, 255, 255, 0.5); border-radius: 50%;
+            cursor: pointer; transition: 0.4s; background: rgba(0, 255, 255, 0.1);
+            font-size: 3.5rem; filter: opacity(0.9); /* HIGH VISIBILITY */
+        }
+        .icon-btn.active { 
+            border-color: #00ffff; background: rgba(0,255,255,0.25); 
+            transform: scale(1.15) translateY(-10px); 
+            filter: opacity(1);
+            box-shadow: 0 0 45px rgba(0,255,255,0.6), inset 0 0 20px rgba(0,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="brand"><h1>VELOCIS™</h1><p style="color:#00ffff; font-size:0.6rem; letter-spacing:5px;">GLOBAL MOBILITY COMMAND</p></div>
+
+    <div id="continent-hub">
+        <button class="continent-btn" onclick="openGate('ASIA')">ASIA</button>
+        <button class="continent-btn" onclick="openGate('AFRICA')">AFRICA</button>
+        <button class="continent-btn" onclick="openGate('NORTH AMERICA')">NORTH AMERICA</button>
+        <button class="continent-btn" onclick="openGate('SOUTH AMERICA')">SOUTH AMERICA</button>
+        <button class="continent-btn" onclick="openGate('EUROPE')">EUROPE</button>
+    </div>
+
+    <div id="transport-menu">
+        <div id="btn-air" class="icon-btn active" onclick="setMode('air', this)">✈️</div>
+        <div id="btn-sea" class="icon-btn" onclick="setMode('sea', this)">🚢</div>
+        <div id="btn-rail" class="icon-btn" onclick="setMode('rail', this)">🚆</div>
+        <div id="btn-sub" class="icon-btn" onclick="setMode('sub', this)">🚇</div>
+    </div>
+
+    <script>
+        const myMarker = "696305"; // Velocis™ Partner ID
+        const geoMap = {
+    "NYC": { 
+        iata: "JFK", 
+        air: "JFK INTL", sea: "PORT NY", rail: "GRAND CENTRAL", sub: "PENN STATION" 
+    },
+    "LONDON": { 
+        iata: "LHR", 
+        air: "HEATHROW", sea: "PORT LONDON", rail: "ST. PANCRAS", sub: "KING'S CROSS" 
+    },
+    "TOKYO": { 
+        iata: "NRT", 
+        air: "NARITA", sea: "TOKYO BAY", rail: "SHINJUKU", sub: "SHIBUYA" 
+    },
+    "MIAMI": { 
+        iata: "MIA", 
+        air: "MIA INTL", sea: "PORT MIAMI", rail: "BRIGHTLINE", sub: "GOVT CENTER" 
+    },
+    "PARIS": { 
+        iata: "CDG", 
+        air: "CDG INTL", sea: "LE HAVRE", rail: "GARE DU NORD", sub: "CHATELET" 
+    },
+    "DUBAI": { 
+        iata: "DXB", 
+        air: "DXB INTL", sea: "PORT RASHID", rail: "ETIHAD RAIL", sub: "DUBAI METRO" 
+    },
+    "SINGAPORE": { 
+        iata: "SIN", 
+        air: "CHANGI", sea: "PASIR PANJANG", rail: "WOODLANDS", sub: "MARINA BAY" 
+    }
+};
+
+        const travelMatrix = {
+            "NORTH AMERICA": { hubs: ["NYC", "MIAMI", "LAX", "TORONTO", "MEXICO CITY", "CHICAGO", "VANCOUVER"], air: [{r:"JFK→LHR", p:"$520"}], sea: [{r:"MIA PORT", p:"$1200"}], rail: [{r:"AMTRAK", p:"$450"}], sub: [{r:"NYC METRO", p:"$33"}] },
+            EUROPE: { hubs: ["LONDON", "PARIS", "ROME", "MADRID", "BERLIN", "AMSTERDAM", "ZURICH"], air: [{r:"LHR→JFK", p:"$520"}], sea: [{r:"PORT ROME", p:"$2450"}], rail: [{r:"EUROSTAR", p:"$180"}], sub: [{r:"OYSTER PASS", p:"£15"}] },
+            ASIA: { hubs: ["TOKYO", "SINGAPORE", "DUBAI", "SEOUL", "BANGKOK", "HONG KONG", "SHANGHAI"], air: [{r:"NRT→LAX", p:"$910"}], sea: [{r:"SG PORT", p:"$1850"}], rail: [{r:"SHINKANSEN", p:"$210"}], sub: [{r:"SUICA PASS", p:"¥2000"}] },
+            AFRICA: { hubs: ["CAIRO", "CAPE TOWN", "CASABLANCA", "LAGOS", "NAIROBI", "MARRAKECH"], air: [{r:"CAI→LHR", p:"$650"}], sea: [{r:"PORT SAID", p:"$1100"}], rail: [{r:"BLUE TRAIN", p:"$890"}], sub: [{r:"CAIRO METRO", p:"EGP 10"}] },
+            "SOUTH AMERICA": { hubs: ["RIO", "BOGOTA", "LIMA", "SAO PAULO", "SANTIAGO", "BUENOS AIRES"], air: [{r:"GIG→MAD", p:"$720"}], sea: [{r:"SANTOS", p:"$950"}], rail: [{r:"ANDES", p:"$310"}], sub: [{r:"METRO RIO", p:"R$ 6.90"}] }
+        };// This function bridges your hub to real-world bookings
+function openGate(destination) {
+    // 1. Get the IATA code (like JFK, LHR, or NRT) from your geoMap
+    const iata = geoMap[destination].iata;
+
+    // 2. Build the professional deep link to Kiwi.com
+    // marker=696305 tells them you are the middleman to pay
+    const trackingLink = `https://tp.media/r?marker=${myMarker}&p=658&u=https://www.kiwi.com/en/search/results/current/${iata}`;
+
+    // 3. Open the booking world in a new tab for your user
+    window.open(trackingLink, '_blank');
+}
+
+        let currentMode = 'air', earthImg;
+        function setMode(m, el) { currentMode = m; document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); }
+        function preload() { earthImg = loadImage('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'); }
+        function setup() { createCanvas(windowWidth, windowHeight, WEBGL); }
+        function draw() { background(0); ambientLight(255); pointLight(255, 255, 255, 0, 0, 800); push(); rotateY(frameCount * 0.005); noStroke(); texture(earthImg); sphere(180); pop(); }
+
+        function openGate(region) {
+            const data = travelMatrix[region];
+            const old = document.querySelector('.card'); if (old) old.remove();
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <h3 style="color:#00ffff; margin:0; font-size:0.85rem;">GDS INTERCEPT: ${region}</h3>
+                
+                <label style="font-size:0.5rem; color:#00ffff; margin-top:10px;">DEPARTURE (SWIPE HUB OR TYPE):</label>
+                <div class="gateway-deck">${data.hubs.map(h => `<div class="city-tag" onclick="interceptPort('${h}', 'embark-port', 'embark-input')">${h}</div>`).join('')}</div>
+                <input type="text" id="embark-input" class="port-input" placeholder="MANUAL ENTRY...">
+                <div class="manifest-group"><div id="embark-port" class="port-display">GATEWAY: UNKNOWN</div></div>
+
+                <label style="font-size:0.5rem; color:#00ffff; margin-top:5px;">ARRIVAL (SWIPE HUB OR TYPE):</label>
+                <div class="gateway-deck">${data.hubs.map(h => `<div class="city-tag" onclick="interceptPort('${h}', 'disembark-port', 'disembark-input')">${h}</div>`).join('')}</div>
+                <input type="text" id="disembark-input" class="port-input" placeholder="MANUAL ENTRY...">
+                <div class="manifest-group"><div id="disembark-port" class="port-display">GATEWAY: UNKNOWN</div></div>
+
+                <div class="scroll-area">${data[currentMode].map(opt => `<div class="itinerary-line"><span>${opt.r}<br><b style="font-size:1.1rem; color:#fff;">${opt.p}</b></span><button class="validate-btn" onclick="alert('LOCKED')">LOCK</button></div>`).join('')}</div>
+                <button style="width:100%; margin-top:10px; padding:12px; color:#FFD700; border:1px solid #FFD700; background:none; font-weight:bold; cursor:pointer;" onclick="this.parentElement.remove()">CLOSE TERMINAL</button>`;
+            document.body.appendChild(card);
+        }
+
+        function interceptPort(city, displayId, inputId) {
+            const gateway = (geoMap[city] && geoMap[city][currentMode]) || city.toUpperCase() + " HUB";
+            document.getElementById(displayId).innerText = "IDENTIFIED: " + gateway;
+            document.getElementById(inputId).value = city;
+        }
+    </script>
+</body>
+</html>
