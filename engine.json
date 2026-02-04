@@ -1,0 +1,14 @@
+{
+  "flights": [
+    {"route": "MIAMI → PARIS", "price": "$842", "lat": 25.76, "lng": -80.19},
+    {"route": "LONDON → NYC", "price": "$520", "lat": 51.50, "lng": -0.12}
+  ],
+  "cruises": [
+    {"route": "CARIBBEAN VOYAGE", "price": "$1,200", "lat": 18.10, "lng": -77.29},
+    {"route": "MEDITERRANEAN ELITE", "price": "$2,450", "lat": 37.98, "lng": 23.72}
+  ],
+  "trains": [
+    {"route": "EUROSTAR PREMIUM", "price": "$180", "lat": 48.85, "lng": 2.35},
+    {"route": "ORIENT EXPRESS", "price": "$3,100", "lat": 45.44, "lng": 12.31}
+  ]
+}
